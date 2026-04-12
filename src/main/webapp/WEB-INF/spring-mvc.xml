@@ -37,7 +37,7 @@
         <property name="url"
                   value="jdbc:mysql://localhost:3306/announcement_db?useSSL=false&amp;allowPublicKeyRetrieval=true&amp;serverTimezone=Asia/Taipei&amp;characterEncoding=UTF-8"/>
         <property name="username" value="root"/>
-        <property name="password" value="password"/>
+        <property name="password" value="e1012125"/>
         <property name="initialSize" value="5"/>
         <property name="maxTotal" value="20"/>
     </bean>

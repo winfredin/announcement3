@@ -69,9 +69,6 @@
 
     <!-- Multipart File Upload Resolver (max 20MB) -->
     <bean id="multipartResolver"
-          class="org.springframework.web.multipart.commons.CommonsMultipartResolver">
-        <property name="maxUploadSize" value="20971520"/>
-        <property name="defaultEncoding" value="UTF-8"/>
-    </bean>
+          class="org.springframework.web.multipart.support.StandardServletMultipartResolver"/>
 
 </beans>

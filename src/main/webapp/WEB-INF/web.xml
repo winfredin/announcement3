@@ -16,6 +16,12 @@
             <param-value>/WEB-INF/spring-mvc.xml</param-value>
         </init-param>
         <load-on-startup>1</load-on-startup>
+        <multipart-config>
+            <!-- 20MB max file size, 20MB max request size -->
+            <max-file-size>20971520</max-file-size>
+            <max-request-size>20971520</max-request-size>
+            <file-size-threshold>0</file-size-threshold>
+        </multipart-config>
     </servlet>
 
     <servlet-mapping>

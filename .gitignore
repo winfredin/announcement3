@@ -11,3 +11,5 @@ target/
 .classpath
 *.log
 /src/main/webapp/uploads/
+scripts/
+curl

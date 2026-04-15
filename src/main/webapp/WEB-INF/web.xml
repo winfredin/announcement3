@@ -5,9 +5,8 @@
          http://xmlns.jcp.org/xml/ns/javaee/web-app_4_0.xsd"
          version="4.0">
 
-    <display-name>Announcement System</display-name>
+    <display-name>Announcement System (REST API)</display-name>
 
-    <!-- Spring MVC Front Controller -->
     <servlet>
         <servlet-name>dispatcher</servlet-name>
         <servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
@@ -17,7 +16,6 @@
         </init-param>
         <load-on-startup>1</load-on-startup>
         <multipart-config>
-            <!-- 20MB max file size, 20MB max request size -->
             <max-file-size>20971520</max-file-size>
             <max-request-size>20971520</max-request-size>
             <file-size-threshold>0</file-size-threshold>
@@ -47,18 +45,7 @@
         <url-pattern>/*</url-pattern>
     </filter-mapping>
 
-    <!-- HTTP Method Filter (for PUT/DELETE from forms) -->
-    <filter>
-        <filter-name>hiddenHttpMethodFilter</filter-name>
-        <filter-class>org.springframework.web.filter.HiddenHttpMethodFilter</filter-class>
-    </filter>
-    <filter-mapping>
-        <filter-name>hiddenHttpMethodFilter</filter-name>
-        <url-pattern>/*</url-pattern>
-    </filter-mapping>
-
-    <!-- Default welcome page redirect -->
     <welcome-file-list>
-        <welcome-file>index.jsp</welcome-file>
+        <welcome-file>list.html</welcome-file>
     </welcome-file-list>
 </web-app>

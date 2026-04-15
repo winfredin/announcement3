@@ -3,44 +3,35 @@ package com.intumit.announcement.controller;
 import com.intumit.announcement.model.Announcement;
 import com.intumit.announcement.service.AnnouncementService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.propertyeditors.CustomDateEditor;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
-import org.springframework.web.bind.WebDataBinder;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
-@Controller
-@RequestMapping("/announcement")
+@RestController
+@RequestMapping("/api/announcements")
 public class AnnouncementController {
 
     private static final int PAGE_SIZE = 10;
+    private final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
 
     @Autowired
     private AnnouncementService announcementService;
 
-    /** Bind date strings (yyyy-MM-dd) to java.util.Date in all form submissions */
-    @InitBinder
-    public void initBinder(WebDataBinder binder) {
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-        sdf.setLenient(false);
-        binder.registerCustomEditor(Date.class, new CustomDateEditor(sdf, true));
-    }
-
     // -----------------------------------------------------------------------
-    // LIST
+    // GET /api/announcements?page=1
     // -----------------------------------------------------------------------
+    @GetMapping
+    public ResponseEntity<Map<String, Object>> list(
+            @RequestParam(defaultValue = "1") int page) {
 
-    @GetMapping("/list")
-    public String list(@RequestParam(defaultValue = "1") int page, Model model) {
         long total = announcementService.count();
         int totalPages = (int) Math.ceil((double) total / PAGE_SIZE);
         if (totalPages < 1) totalPages = 1;
@@ -49,96 +40,114 @@ public class AnnouncementController {
 
         List<Announcement> announcements = announcementService.findPage(page, PAGE_SIZE);
 
-        model.addAttribute("announcements", announcements);
-        model.addAttribute("currentPage", page);
-        model.addAttribute("totalPages", totalPages);
-        model.addAttribute("total", total);
-        return "list";
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("announcements", announcements);
+        result.put("currentPage", page);
+        result.put("totalPages", totalPages);
+        result.put("total", total);
+        return ResponseEntity.ok(result);
     }
 
     // -----------------------------------------------------------------------
-    // ADD
+    // GET /api/announcements/{id}
     // -----------------------------------------------------------------------
-
-    @GetMapping("/add")
-    public String showAddForm(Model model) {
-        Announcement announcement = new Announcement();
-        announcement.setPublisher("Administrator");
-        model.addAttribute("announcement", announcement);
-        return "add";
-    }
-
-    @PostMapping("/add")
-    public String add(@ModelAttribute Announcement announcement,
-                      @RequestParam("attachFile") MultipartFile file,
-                      HttpServletRequest request) throws IOException {
-
-        handleFileUpload(file, announcement, request);
-        announcementService.save(announcement);
-        return "redirect:/announcement/list";
+    @GetMapping("/{id}")
+    public ResponseEntity<Announcement> getById(@PathVariable Long id) {
+        Announcement ann = announcementService.findById(id);
+        if (ann == null) return ResponseEntity.notFound().build();
+        return ResponseEntity.ok(ann);
     }
 
     // -----------------------------------------------------------------------
-    // EDIT
+    // POST /api/announcements  (multipart/form-data)
     // -----------------------------------------------------------------------
+    @PostMapping
+    public ResponseEntity<Announcement> create(
+            @RequestParam String title,
+            @RequestParam String publisher,
+            @RequestParam String postDate,
+            @RequestParam String expiryDate,
+            @RequestParam(required = false) String content,
+            @RequestParam(value = "attachFile", required = false) MultipartFile file,
+            HttpServletRequest request) throws IOException, ParseException {
 
-    @GetMapping("/edit/{id}")
-    public String showEditForm(@PathVariable Long id, Model model) {
-        Announcement announcement = announcementService.findById(id);
-        model.addAttribute("announcement", announcement);
-        return "edit";
+        Announcement ann = new Announcement();
+        ann.setTitle(title);
+        ann.setPublisher(publisher);
+        ann.setPostDate(sdf.parse(postDate));
+        ann.setExpiryDate(sdf.parse(expiryDate));
+        ann.setContent(content);
+        handleFileUpload(file, ann, request);
+
+        announcementService.save(ann);
+        return ResponseEntity.ok(ann);
     }
 
-    @PostMapping("/edit/{id}")
-    public String edit(@PathVariable Long id,
-                       @ModelAttribute Announcement announcement,
-                       @RequestParam("attachFile") MultipartFile file,
-                       HttpServletRequest request) throws IOException {
+    // -----------------------------------------------------------------------
+    // PUT /api/announcements/{id}  (multipart/form-data)
+    // -----------------------------------------------------------------------
+    @PutMapping("/{id}")
+    public ResponseEntity<Announcement> update(
+            @PathVariable Long id,
+            @RequestParam String title,
+            @RequestParam String publisher,
+            @RequestParam String postDate,
+            @RequestParam String expiryDate,
+            @RequestParam(required = false) String content,
+            @RequestParam(value = "attachFile", required = false) MultipartFile file,
+            HttpServletRequest request) throws IOException, ParseException {
 
-        announcement.setId(id);
+        Announcement ann = announcementService.findById(id);
+        if (ann == null) return ResponseEntity.notFound().build();
 
-        if (!file.isEmpty()) {
-            handleFileUpload(file, announcement, request);
-        } else {
-            // Preserve existing attachment info
-            Announcement existing = announcementService.findById(id);
-            announcement.setFileName(existing.getFileName());
-            announcement.setFilePath(existing.getFilePath());
+        ann.setTitle(title);
+        ann.setPublisher(publisher);
+        ann.setPostDate(sdf.parse(postDate));
+        ann.setExpiryDate(sdf.parse(expiryDate));
+        ann.setContent(content);
+
+        if (file != null && !file.isEmpty()) {
+            handleFileUpload(file, ann, request);
         }
 
-        announcementService.update(announcement);
-        return "redirect:/announcement/list";
+        announcementService.update(ann);
+        return ResponseEntity.ok(ann);
     }
 
     // -----------------------------------------------------------------------
-    // DELETE
+    // DELETE /api/announcements/{id}
     // -----------------------------------------------------------------------
-
-    @PostMapping("/delete/{id}")
-    public String delete(@PathVariable Long id) {
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Map<String, String>> delete(@PathVariable Long id) {
         announcementService.delete(id);
-        return "redirect:/announcement/list";
+        Map<String, String> result = new HashMap<>();
+        result.put("message", "刪除成功");
+        return ResponseEntity.ok(result);
     }
 
     // -----------------------------------------------------------------------
-    // FILE DOWNLOAD
+    // GET /api/announcements/{id}/download
     // -----------------------------------------------------------------------
-
-    @GetMapping("/download/{id}")
+    @GetMapping("/{id}/download")
     public void download(@PathVariable Long id,
-                         javax.servlet.http.HttpServletResponse response,
-                         HttpServletRequest request) throws IOException {
-        Announcement announcement = announcementService.findById(id);
-        if (announcement == null || announcement.getFileName() == null) return;
+                         HttpServletRequest request,
+                         HttpServletResponse response) throws IOException {
+        Announcement ann = announcementService.findById(id);
+        if (ann == null || ann.getFileName() == null) {
+            response.sendError(404);
+            return;
+        }
 
-        String filePath = request.getServletContext().getRealPath("/uploads/")
-                + announcement.getFileName();
+        String filePath = request.getServletContext().getRealPath("/uploads/") + ann.getFileName();
         File file = new File(filePath);
-        if (!file.exists()) return;
+        if (!file.exists()) {
+            response.sendError(404);
+            return;
+        }
 
         response.setContentType("application/octet-stream");
         response.setHeader("Content-Disposition",
-                "attachment; filename=\"" + announcement.getFileName() + "\"");
+                "attachment; filename=\"" + ann.getFileName() + "\"");
         response.setContentLengthLong(file.length());
 
         try (java.io.FileInputStream fis = new java.io.FileInputStream(file);
@@ -152,19 +161,9 @@ public class AnnouncementController {
     }
 
     // -----------------------------------------------------------------------
-    // ROOT redirect
-    // -----------------------------------------------------------------------
-
-    @GetMapping("/")
-    public String root() {
-        return "redirect:/announcement/list";
-    }
-
-    // -----------------------------------------------------------------------
     // Helper
     // -----------------------------------------------------------------------
-
-    private void handleFileUpload(MultipartFile file, Announcement announcement,
+    private void handleFileUpload(MultipartFile file, Announcement ann,
                                   HttpServletRequest request) throws IOException {
         if (file == null || file.isEmpty()) return;
 
@@ -174,14 +173,11 @@ public class AnnouncementController {
 
         String originalName = file.getOriginalFilename();
         String ext = (originalName != null && originalName.contains("."))
-                ? originalName.substring(originalName.lastIndexOf("."))
-                : "";
+                ? originalName.substring(originalName.lastIndexOf(".")) : "";
         String uniqueName = UUID.randomUUID().toString() + ext;
 
-        File dest = new File(uploadDir + File.separator + uniqueName);
-        file.transferTo(dest);
-
-        announcement.setFileName(originalName);
-        announcement.setFilePath("/uploads/" + uniqueName);
+        file.transferTo(new File(uploadDir + File.separator + uniqueName));
+        ann.setFileName(originalName);
+        ann.setFilePath("/uploads/" + uniqueName);
     }
 }

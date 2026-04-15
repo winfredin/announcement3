@@ -1,5 +1,6 @@
 package com.intumit.announcement.model;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import org.springframework.format.annotation.DateTimeFormat;
 
 import javax.persistence.*;
@@ -22,11 +23,13 @@ public class Announcement {
     @Column(name = "post_date", nullable = false)
     @Temporal(TemporalType.DATE)
     @DateTimeFormat(pattern = "yyyy-MM-dd")
+    @JsonFormat(pattern = "yyyy-MM-dd", timezone = "Asia/Taipei")
     private Date postDate;
 
     @Column(name = "expiry_date", nullable = false)
     @Temporal(TemporalType.DATE)
     @DateTimeFormat(pattern = "yyyy-MM-dd")
+    @JsonFormat(pattern = "yyyy-MM-dd", timezone = "Asia/Taipei")
     private Date expiryDate;
 
     @Column(columnDefinition = "TEXT")
@@ -40,10 +43,12 @@ public class Announcement {
 
     @Column(name = "created_at", updatable = false)
     @Temporal(TemporalType.TIMESTAMP)
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Taipei")
     private Date createdAt;
 
     @Column(name = "updated_at")
     @Temporal(TemporalType.TIMESTAMP)
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Taipei")
     private Date updatedAt;
 
     @PrePersist
@@ -56,8 +61,6 @@ public class Announcement {
     protected void onUpdate() {
         updatedAt = new Date();
     }
-
-    // Getters and Setters
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }

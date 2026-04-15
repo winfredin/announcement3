@@ -138,17 +138,23 @@ public class AnnouncementController {
             return;
         }
 
-        String filePath = request.getServletContext().getRealPath("/uploads/") + ann.getFileName();
+        String filePath = request.getServletContext().getRealPath("/") + ann.getFilePath();
         File file = new File(filePath);
         if (!file.exists()) {
             response.sendError(404);
             return;
         }
 
-        response.setContentType("application/octet-stream");
+        String mimeType = request.getServletContext().getMimeType(file.getName());
+        if (mimeType == null) mimeType = "application/octet-stream";
+
+        String disposition = mimeType.startsWith("image/") || mimeType.equals("application/pdf")
+                ? "inline" : "attachment";
+
+        response.setContentType(mimeType);
         response.setHeader("Content-Disposition",
-                "attachment; filename=\"" + ann.getFileName() + "\"");
-        response.setContentLengthLong(file.length());
+                disposition + "; filename=\"" + ann.getFileName() + "\"");
+        response.setContentLength((int) file.length());
 
         try (java.io.FileInputStream fis = new java.io.FileInputStream(file);
              java.io.OutputStream os = response.getOutputStream()) {

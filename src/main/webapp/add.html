@@ -6,6 +6,7 @@
     <title>新增公佈事項</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/summernote@0.9.0/dist/summernote-bs5.min.css" rel="stylesheet">
     <style>
         body { background-color: #f8f9fa; }
         .card { box-shadow: 0 1px 4px rgba(0,0,0,.08); }
@@ -84,37 +85,41 @@
     </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://cdn.ckeditor.com/4.22.1/standard/ckeditor.js"></script>
+<script>
+    $.fn.tooltip = function(option) {
+        return this.each(function() {
+            var $el = $(this), data = $el.data('bs.tooltip'), opts = typeof option === 'object' ? option : {};
+            if (!data) $el.data('bs.tooltip', new bootstrap.Tooltip(this, opts));
+            if (typeof option === 'string' && data) data[option]();
+        });
+    };
+</script>
+<script src="https://cdn.jsdelivr.net/npm/summernote@0.9.0/dist/summernote-bs5.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/summernote@0.9.0/dist/lang/summernote-zh-TW.min.js"></script>
 <script>
     document.getElementById('postDate').valueAsDate = new Date();
 
-    CKEDITOR.replace('content', {
-        language: 'zh', height: 300,
+    $('#content').summernote({
+        lang: 'zh-TW', height: 300,
         toolbar: [
-            { name: 'basicstyles', items: ['Bold','Italic','Underline','Strike','-','RemoveFormat'] },
-            { name: 'paragraph', items: ['NumberedList','BulletedList','-','JustifyLeft','JustifyCenter','JustifyRight'] },
-            { name: 'styles', items: ['Format','Font','FontSize'] },
-            { name: 'colors', items: ['TextColor','BGColor'] },
-            { name: 'links', items: ['Link','Unlink'] },
-            { name: 'insert', items: ['Image','Table','HorizontalRule'] },
-            { name: 'tools', items: ['Source'] }
+            ['style', ['bold', 'italic', 'underline', 'strikethrough', 'clear']],
+            ['font', ['fontname', 'fontsize', 'color', 'forecolor', 'backcolor']],
+            ['para', ['ul', 'ol', 'paragraph']],
+            ['insert', ['link', 'picture', 'table', 'hr']],
+            ['view', ['codeview']]
         ]
     });
 
     document.getElementById('addForm').addEventListener('submit', async function(e) {
         e.preventDefault();
 
-        // 把 CKEditor 內容同步到 textarea
-        for (const instance in CKEDITOR.instances) {
-            CKEDITOR.instances[instance].updateElement();
-        }
+        // 把 Summernote 內容同步到 textarea
+        $('#content').val($('#content').summernote('code'));
 
         const formData = new FormData(this);
-        const res = await fetch('api/announcements', {
-            method: 'POST',
-            body: formData
-        });
+        const res = await fetch('api/announcements', { method: 'POST', body: formData });
 
         if (res.ok) {
             window.location.href = 'list.html';
